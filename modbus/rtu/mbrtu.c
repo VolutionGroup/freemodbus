@@ -190,7 +190,7 @@ eMBRTUSend( UCHAR ucSlaveAddress, const UCHAR * pucFrame, USHORT usLength )
 
     ENTER_CRITICAL_SECTION(  );
 
-    /* Check if the receiver is still in idle state. If not we where to
+    /* Check if the receiver is still in idle state. If not we were too
      * slow with processing the received frame and the master sent another
      * frame on the network. We have to abort sending the frame.
      */
@@ -220,6 +220,47 @@ eMBRTUSend( UCHAR ucSlaveAddress, const UCHAR * pucFrame, USHORT usLength )
     EXIT_CRITICAL_SECTION(  );
     return eStatus;
 }
+
+// For MB_FORWARDING > 0
+eMBErrorCode
+eMBRTUForward( const UCHAR * pucPDU, USHORT usLength )
+{
+	eMBErrorCode    eStatus = MB_ENOERR;
+
+	/* Length and CRC check */
+	if( ( usLength >= MB_SER_PDU_SIZE_MIN )
+	   && ( usMBCRC16( ( UCHAR * ) pucPDU, usLength ) == 0 ) )
+	{
+		ENTER_CRITICAL_SECTION(  );
+
+		/* Check if the receiver is still in idle state. If not the slave device was too
+		 * slow with processing the received frame and the master sent another
+		 * frame on the network. We have to abort forwarding the frame.
+		 */
+		if( eRcvState == STATE_RX_IDLE )
+		{
+			pucSndBufferCur = ( UCHAR * ) pucPDU;
+			usSndBufferCount = usLength;
+			
+			/* Activate the transmitter. */
+			eSndState = STATE_TX_XMIT;
+			vMBPortSerialEnable( FALSE, TRUE );
+		}
+		else
+		{
+			eStatus = MB_EIO;
+		}
+
+		EXIT_CRITICAL_SECTION(  );
+	}
+	else
+	{
+		eStatus = MB_EIO;
+	}
+
+	return eStatus;
+}
+
 
 BOOL
 xMBRTUReceiveFSM( void )

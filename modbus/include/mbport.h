@@ -80,6 +80,9 @@ BOOL            xMBPortSerialGetByte( CHAR * pucByte );
 
 BOOL            xMBPortSerialPutByte( CHAR ucByte );
 
+// Only if MB_FORWARDING
+void			xMBPortSerialForward( UCHAR * pucBytes, USHORT usLength );
+
 /* ----------------------- Timers functions ---------------------------------*/
 BOOL            xMBPortTimersInit( USHORT usTimeOut50us );
 

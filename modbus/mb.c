@@ -370,6 +370,14 @@ eMBPoll( void )
                 {
                     ( void )xMBPortEventPost( EV_EXECUTE );
                 }
+#if MB_FORWARDING > 0
+				if ( ucRcvAddress != ucMBAddress )
+				{
+					/* Not addressed to us - forward to slave port(s) */
+					/* TODO - this assumes RTU with the address being the byte before the frame + CRC16 following */
+					xMBPortSerialForward( ucMBFrame - 1, usLength + 3 );
+				}
+#endif
             }
             break;
 

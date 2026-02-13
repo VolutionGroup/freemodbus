@@ -447,6 +447,9 @@ eMBErrorCode    eMBRegFileCB( UCHAR * pucFileBuffer, USHORT usFileNumber,
                               USHORT usRecordNumber, USHORT usRecordLength,
 							  eMBRegisterMode eMode );
 
+// For MB_FORWARDING > 0
+eMBErrorCode    eMBRTUForward( const UCHAR * pucPDU, USHORT usLength );
+
 #ifdef __cplusplus
 PR_END_EXTERN_C
 #endif
