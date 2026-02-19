@@ -128,7 +128,8 @@ eMBFuncWriteMultipleHoldingRegister( UCHAR * pucFrame, USHORT * usLen )
 
         if( ( usRegCount >= 1 ) &&
             ( usRegCount <= MB_PDU_FUNC_WRITE_MUL_REGCNT_MAX ) &&
-            ( ucRegByteCount == ( UCHAR ) ( 2 * usRegCount ) ) )
+            ( ucRegByteCount == ( UCHAR ) ( 2 * usRegCount ) ) &&
+			( ucRegByteCount == ( UCHAR ) ( *usLen - MB_PDU_SIZE_MIN - MB_PDU_FUNC_WRITE_MUL_SIZE_MIN ) ) )
         {
             /* Make callback to update the register values. */
             eRegStatus =
