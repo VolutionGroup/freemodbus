@@ -55,7 +55,7 @@
 #define MB_PDU_FUNC_WRITE_MUL_BYTECNT_OFF       ( MB_PDU_DATA_OFF + 4 )
 #define MB_PDU_FUNC_WRITE_MUL_VALUES_OFF        ( MB_PDU_DATA_OFF + 5 )
 #define MB_PDU_FUNC_WRITE_MUL_SIZE_MIN          ( 5 )
-#define MB_PDU_FUNC_WRITE_MUL_REGCNT_MAX        ( 0x0078 )
+#define MB_PDU_FUNC_WRITE_MUL_REGCNT_MAX        ( 0x007B )
 
 #define MB_PDU_FUNC_READWRITE_READ_ADDR_OFF     ( MB_PDU_DATA_OFF + 0 )
 #define MB_PDU_FUNC_READWRITE_READ_REGCNT_OFF   ( MB_PDU_DATA_OFF + 2 )
@@ -128,8 +128,8 @@ eMBFuncWriteMultipleHoldingRegister( UCHAR * pucFrame, USHORT * usLen )
 
         if( ( usRegCount >= 1 ) &&
             ( usRegCount <= MB_PDU_FUNC_WRITE_MUL_REGCNT_MAX ) &&
-            ( ucRegByteCount == ( UCHAR ) ( 2 * usRegCount ) ) &&
-			( ucRegByteCount == ( UCHAR ) ( *usLen - MB_PDU_SIZE_MIN - MB_PDU_FUNC_WRITE_MUL_SIZE_MIN ) ) )
+            ( ucRegByteCount == ( 2 * usRegCount ) ) &&
+            ( *usLen == ( MB_PDU_FUNC_WRITE_MUL_VALUES_OFF + ucRegByteCount ) ) )
         {
             /* Make callback to update the register values. */
             eRegStatus =
@@ -264,7 +264,8 @@ eMBFuncReadWriteMultipleHoldingRegister( UCHAR * pucFrame, USHORT * usLen )
 
         if( ( usRegReadCount >= 1 ) && ( usRegReadCount <= 0x7D ) &&
             ( usRegWriteCount >= 1 ) && ( usRegWriteCount <= 0x79 ) &&
-            ( ( 2 * usRegWriteCount ) == ucRegWriteByteCount ) )
+            ( ( 2 * usRegWriteCount ) == ucRegWriteByteCount ) &&
+            ( *usLen == ( MB_PDU_FUNC_READWRITE_WRITE_VALUES_OFF + ucRegWriteByteCount ) ) )
         {
             /* Make callback to update the register values. */
             eRegStatus = eMBRegHoldingCB( &pucFrame[MB_PDU_FUNC_READWRITE_WRITE_VALUES_OFF],
@@ -301,6 +302,11 @@ eMBFuncReadWriteMultipleHoldingRegister( UCHAR * pucFrame, USHORT * usLen )
         {
             eStatus = MB_EX_ILLEGAL_DATA_VALUE;
         }
+    }
+    else
+    {
+        /* The fixed request header is incomplete. */
+        eStatus = MB_EX_ILLEGAL_DATA_VALUE;
     }
     return eStatus;
 }
