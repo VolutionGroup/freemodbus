@@ -84,6 +84,10 @@ eMBFuncWriteFileRecord( UCHAR * pucFrame, USHORT * usLen )
     {
         ucFrameLen = pucFrame[MB_PDU_FUNC_FILE_FRAME_LEN_OFF];
         ucRefType = pucFrame[MB_PDU_FUNC_FILE_REF_TYPE_OFF];
+        if ( ucRefType != MB_PDU_FUNC_FILE_REF_TYPE )
+        {
+            return MB_EX_ILLEGAL_DATA_ADDRESS;
+        }
         usFileNum = ( USHORT )( pucFrame[MB_PDU_FUNC_FILE_NUM_OFF] << 8 );
         usFileNum |= ( USHORT )( pucFrame[MB_PDU_FUNC_FILE_NUM_OFF + 1] );
         usFileRec = ( USHORT )( pucFrame[MB_PDU_FUNC_FILE_REC_NUM_OFF] << 8 );
@@ -144,6 +148,10 @@ eMBFuncReadFileRecord( UCHAR * pucFrame, USHORT * usLen )
     {
         ucFrameLen = pucFrame[MB_PDU_FUNC_FILE_FRAME_LEN_OFF];
         ucRefType = pucFrame[MB_PDU_FUNC_FILE_REF_TYPE_OFF];
+        if ( ucRefType != MB_PDU_FUNC_FILE_REF_TYPE )
+        {
+            return MB_EX_ILLEGAL_DATA_ADDRESS;
+        }
         usFileNum = ( USHORT )( pucFrame[MB_PDU_FUNC_FILE_NUM_OFF] << 8 );
         usFileNum |= ( USHORT )( pucFrame[MB_PDU_FUNC_FILE_NUM_OFF + 1] );
         usFileRec = ( USHORT )( pucFrame[MB_PDU_FUNC_FILE_REC_NUM_OFF] << 8 );
