@@ -53,11 +53,13 @@
 
 #define MB_PDU_FUNC_FILE_REF_TYPE       ( 6 )
 
-#define MB_PDU_FUNC_FILE_MAX_LEN        ( MB_PDU_SIZE_MAX - MB_PDU_FUNC_FILE_OVERHEAD )
-
 #define MB_PDU_FUNC_FILE_RESP_LEN_OFF   ( MB_PDU_DATA_OFF + 1 )
 #define MB_PDU_FUNC_FILE_RESP_TYPE_OFF  ( MB_PDU_DATA_OFF + 2 )
 #define MB_PDU_FUNC_FILE_RESP_DATA_OFF  ( MB_PDU_DATA_OFF + 3 )
+
+/* Limits for the currently supported single-subrequest frames, in registers. */
+#define MB_PDU_FUNC_FILE_WRITE_COUNT_MAX ( ( MB_PDU_SIZE_MAX - MB_PDU_FUNC_FILE_DATA_OFF ) / 2 )
+#define MB_PDU_FUNC_FILE_READ_COUNT_MAX  ( ( MB_PDU_SIZE_MAX - MB_PDU_FUNC_FILE_RESP_DATA_OFF ) / 2 )
 
 /* ----------------------- Static functions ---------------------------------*/
 eMBException    prveMBError2Exception( eMBErrorCode eErrorCode );
@@ -74,7 +76,7 @@ eMBFuncWriteFileRecord( UCHAR * pucFrame, USHORT * usLen )
     USHORT          usFileNum;
     USHORT          usFileRec;
     USHORT          usFileRecLen;
-    USHORT          usFileByteLen;
+    UCHAR           ucFileByteLen;
     eMBException    eStatus = MB_EX_ILLEGAL_DATA_VALUE;
     eMBErrorCode    eRegStatus;
 
@@ -89,11 +91,16 @@ eMBFuncWriteFileRecord( UCHAR * pucFrame, USHORT * usLen )
         usFileRecLen = ( USHORT )( pucFrame[MB_PDU_FUNC_FILE_REC_LEN_OFF] << 8 );
         usFileRecLen |= ( USHORT )( pucFrame[MB_PDU_FUNC_FILE_REC_LEN_OFF + 1] );
 
-        usFileByteLen = usFileRecLen * 2;
+        /* Validate the wire count before multiplication or narrowing. */
+        if ( ( usFileRecLen < 1 ) || ( usFileRecLen > MB_PDU_FUNC_FILE_WRITE_COUNT_MAX ) )
+        {
+            return MB_EX_ILLEGAL_DATA_VALUE;
+        }
+        ucFileByteLen = ( UCHAR )( usFileRecLen * 2 );
 
         /* TODO - allow multiple writes per request (as per spec) */
-        if ( (usFileByteLen <= MB_PDU_FUNC_FILE_MAX_LEN)
-            && ( ucFrameLen == (MB_PDU_FUNC_FILE_OVERHEAD + usFileByteLen) ) )
+        if ( ( ucFrameLen == ( MB_PDU_FUNC_FILE_OVERHEAD + ucFileByteLen ) )
+            && ( *usLen == ( MB_PDU_FUNC_FILE_DATA_OFF + ucFileByteLen ) ) )
         {
             /* Make callback to write the records */
             eRegStatus = eMBRegFileCB( &pucFrame[MB_PDU_FUNC_FILE_DATA_OFF], usFileNum,
@@ -127,7 +134,7 @@ eMBFuncReadFileRecord( UCHAR * pucFrame, USHORT * usLen )
     USHORT          usFileNum;
     USHORT          usFileRec;
     USHORT          usFileRecLen;
-    USHORT          usFileByteLen;
+    UCHAR           ucFileByteLen;
     eMBException    eStatus = MB_EX_ILLEGAL_DATA_VALUE;
     eMBErrorCode    eRegStatus;
 
@@ -144,9 +151,14 @@ eMBFuncReadFileRecord( UCHAR * pucFrame, USHORT * usLen )
         usFileRecLen = ( USHORT )( pucFrame[MB_PDU_FUNC_FILE_REC_LEN_OFF] << 8 );
         usFileRecLen |= ( USHORT )( pucFrame[MB_PDU_FUNC_FILE_REC_LEN_OFF + 1] );
 
-        usFileByteLen = usFileRecLen * 2;
+        /* Validate the wire count before multiplication or narrowing. */
+        if ( ( usFileRecLen < 1 ) || ( usFileRecLen > MB_PDU_FUNC_FILE_READ_COUNT_MAX ) )
+        {
+            return MB_EX_ILLEGAL_DATA_VALUE;
+        }
+        ucFileByteLen = ( UCHAR )( usFileRecLen * 2 );
 
-        if ( (usFileByteLen <= MB_PDU_FUNC_FILE_MAX_LEN) && (MB_PDU_FUNC_FILE_OVERHEAD == ucFrameLen) )
+        if ( MB_PDU_FUNC_FILE_OVERHEAD == ucFrameLen )
         {
             /* Make callback to read the records. */
             eRegStatus = eMBRegFileCB( &pucFrame[MB_PDU_FUNC_FILE_RESP_DATA_OFF], usFileNum,
@@ -154,10 +166,10 @@ eMBFuncReadFileRecord( UCHAR * pucFrame, USHORT * usLen )
 
             if ( eRegStatus == MB_ENOERR )
             {
-                pucFrame[MB_PDU_FUNC_FILE_FRAME_LEN_OFF] = 2 + usFileByteLen;
-                pucFrame[MB_PDU_FUNC_FILE_RESP_LEN_OFF] = 1 + usFileByteLen;
+                pucFrame[MB_PDU_FUNC_FILE_FRAME_LEN_OFF] = 2 + ucFileByteLen;
+                pucFrame[MB_PDU_FUNC_FILE_RESP_LEN_OFF] = 1 + ucFileByteLen;
                 pucFrame[MB_PDU_FUNC_FILE_RESP_TYPE_OFF] = ucRefType;
-                *usLen = MB_PDU_FUNC_FILE_RESP_DATA_OFF + usFileByteLen;
+                *usLen = MB_PDU_FUNC_FILE_RESP_DATA_OFF + ucFileByteLen;
 
                 eStatus = MB_EX_NONE;
             }
